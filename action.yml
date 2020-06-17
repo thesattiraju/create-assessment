@@ -13,7 +13,7 @@ inputs:
     description: 'AKS Cluster Name'
     required: true
     default: ''
-  details:
+  description:
     description: 'assessment details'
     required: true
     default: ''
