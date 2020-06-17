@@ -146,6 +146,7 @@ function createASCAssessment() {
 }
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log("Creating ASC assessment");
         yield createASCAssessment();
     });
 }

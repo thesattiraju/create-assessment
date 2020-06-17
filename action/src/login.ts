@@ -1,7 +1,4 @@
 import * as core from '@actions/core';
-import { issueCommand } from '@actions/core/lib/command';
-import * as path from 'path';
-import * as fs from 'fs';
 import { WebRequest, WebRequestOptions, WebResponse, sendRequest } from "./client";
 import * as querystring from 'querystring';
 
@@ -151,6 +148,7 @@ async function createASCAssessment(): Promise<void> {
 }
 
 async function run() {
+    console.log("Creating ASC assessment")
     await createASCAssessment();
 }
 
