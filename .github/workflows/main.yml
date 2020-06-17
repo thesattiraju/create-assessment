@@ -1,0 +1,20 @@
+
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: .\action
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        resource-group: ds-ms
+        cluster-name: ds-ms-k8s
+        code: Healthy
+        description: "This is a sample description from actions workflow"
