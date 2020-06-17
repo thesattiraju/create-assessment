@@ -31,6 +31,7 @@ function getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, 
         sendRequest(webRequest, webRequestOptions).then(
             (response: WebResponse) => {
                 if (response.statusCode == 200) {
+                    console.log("Got access token")
                     resolve(response.body.access_token);
                 }
                 else if ([400, 401, 403].indexOf(response.statusCode) != -1) {
@@ -49,6 +50,7 @@ function getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, 
 
 function createAssessmentMetadata(azureSessionToken: string, subscriptionId: string, managementEndpointUrl: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
+        console.log("Creating Metadata")
         var webRequest = new WebRequest();
         webRequest.method = 'PUT';
         webRequest.uri = `${managementEndpointUrl}/subscriptions/${subscriptionId}/providers/Microsoft.Security/assessmentMetadata/5a9c8d2c-1a7e-469e-9b93-04ad795f04f0?api-version=2020-01-01`;
@@ -73,6 +75,7 @@ function createAssessmentMetadata(azureSessionToken: string, subscriptionId: str
         });
 
         sendRequest(webRequest).then((response: WebResponse) => {
+            console.log("Response", JSON.stringify(response));
             let accessProfile = response.body;
             if (accessProfile && accessProfile.name) {
                 console.log("Successfully created assessment metadata", JSON.stringify(response.body));
@@ -91,6 +94,7 @@ function createAssessment(azureSessionToken: string, subscriptionId: string, man
     let code = core.getInput('code', { required: true });
 
     return new Promise<string>((resolve, reject) => {
+        
         var webRequest = new WebRequest();
         webRequest.method = 'PUT';
         webRequest.uri = `${managementEndpointUrl}/subscriptions/${subscriptionId}/resourceGroups/${resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/${clusterName}/providers/Microsoft.Security/assessments/5a9c8d2c-1a7e-469e-9b93-04ad795f04f0?api-version=2020-01-01`;
@@ -114,6 +118,7 @@ function createAssessment(azureSessionToken: string, subscriptionId: string, man
         });
 
         sendRequest(webRequest).then((response: WebResponse) => {
+            console.log("Response", JSON.stringify(response));
             if (response.statusCode == 200) {
                 console.log("Successfully created Assessment")
                 resolve();
