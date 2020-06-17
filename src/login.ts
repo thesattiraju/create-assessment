@@ -48,8 +48,6 @@ function getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, 
 }
 
 function createAssessmentMetadata(azureSessionToken: string, subscriptionId: string, managementEndpointUrl: string): Promise<string> {
-    let resourceGroupName = core.getInput('resource-group', { required: true });
-    let clusterName = core.getInput('cluster-name', { required: true });
     return new Promise<string>((resolve, reject) => {
         var webRequest = new WebRequest();
         webRequest.method = 'PUT';
@@ -76,7 +74,7 @@ function createAssessmentMetadata(azureSessionToken: string, subscriptionId: str
 
         sendRequest(webRequest).then((response: WebResponse) => {
             let accessProfile = response.body;
-            if (accessProfile.name) {
+            if (accessProfile && accessProfile.name) {
                 console.log("Successfully created assessment metadata", JSON.stringify(response.body));
                 resolve(accessProfile.name);
             } else {
