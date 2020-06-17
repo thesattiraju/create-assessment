@@ -17,6 +17,10 @@ inputs:
     description: 'assessment details'
     required: true
     default: ''
+  code:
+    description: 'assessment code'
+    required: true
+    default: ''
 branding:
   color: 'green' # optional, decorates the entry in the GitHub Marketplace
 runs:
