@@ -69,7 +69,7 @@ function createAssessmentMetadata(azureSessionToken, subscriptionId, managementE
                 "severity": "Medium",
                 "userImpact": "Low",
                 "implementationEffort": "Low",
-                "assessmentType": "VerifiedPartner"
+                "assessmentType": "CustomerManaged"
             }
         });
         client_1.sendRequest(webRequest).then((response) => {
@@ -150,4 +150,5 @@ function run() {
         yield createASCAssessment();
     });
 }
+console.log("Run");
 run().catch(core.setFailed);

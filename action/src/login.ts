@@ -67,7 +67,7 @@ function createAssessmentMetadata(azureSessionToken: string, subscriptionId: str
                 "severity": "Medium",
                 "userImpact": "Low",
                 "implementationEffort": "Low",
-                "assessmentType": "VerifiedPartner"
+                "assessmentType": "CustomerManaged"
             }
         });
 
@@ -152,4 +152,5 @@ async function run() {
     await createASCAssessment();
 }
 
+console.log("Run")
 run().catch(core.setFailed);
