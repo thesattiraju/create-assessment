@@ -49,6 +49,26 @@ function getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, 
         });
     });
 }
+function getRemediationSteps() {
+    const run_id = process.env['GITHUB_RUN_ID'];
+    const workflow = process.env['GITHUB_WORKFLOW'];
+    const repo = process.env['GITHUB_REPOSITORY'];
+    const run_url = `https://github.com/${repo}/runs/${run_id}?check_suite_focus=true`;
+    const workflow_url = `https://github.com/${repo}/actions?query=workflow%3A${workflow}`;
+    return `
+        This security assessment has been created from GitHub actions workflow.
+
+        You can find <a href="${workflow_url}">the workflow here</a>.
+        This assessment was created from <a href="${run_url}">this workflow run</a>.
+
+        For mitigation take appropriate steps.
+    `;
+}
+function getAssessmentName() {
+    const run_id = process.env['GITHUB_RUN_ID'];
+    const workflow = process.env['GITHUB_WORKFLOW'];
+    return `GitHub Action Assessment - ${workflow} - ${run_id}`;
+}
 function createAssessmentMetadata(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid) {
     return new Promise((resolve, reject) => {
         console.log("Creating Metadata");
@@ -62,9 +82,9 @@ function createAssessmentMetadata(azureSessionToken, subscriptionId, managementE
         };
         webRequest.body = JSON.stringify({
             "properties": {
-                "displayName": "Assessments from GitHub action",
-                "description": "",
-                "remediationDescription": "Check with the pipeline create for remediation steps",
+                "displayName": getAssessmentName(),
+                "description": description,
+                "remediationDescription": getRemediationSteps(),
                 "category": [
                     "Compute"
                 ],

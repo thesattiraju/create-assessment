@@ -18,5 +18,5 @@ jobs:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
         resource-group: ds-ms
         cluster-name: ds-ms-k8s
-        code: Healthy
+        code: Unhealthy
         description: "This is a sample description from actions workflow"
