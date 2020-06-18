@@ -21,6 +21,10 @@ inputs:
     description: 'assessment code'
     required: true
     default: ''
+  severity:
+    description: 'Severity of the assessment'
+    required: true
+    default: 'Low'
 branding:
   color: 'green' # optional, decorates the entry in the GitHub Marketplace
 runs:

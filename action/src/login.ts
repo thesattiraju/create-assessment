@@ -73,6 +73,7 @@ function createAssessmentMetadata(azureSessionToken: string, subscriptionId: str
     return new Promise<string>((resolve, reject) => {
         console.log("Creating Metadata")
         let description = core.getInput('description', { required: true });
+        let severity = core.getInput('severity', { required: true });
         var webRequest = new WebRequest();
         webRequest.method = 'PUT';
         webRequest.uri = `${managementEndpointUrl}/subscriptions/${subscriptionId}/providers/Microsoft.Security/assessmentMetadata/${metadata_guid}?api-version=2020-01-01`;
@@ -89,7 +90,7 @@ function createAssessmentMetadata(azureSessionToken: string, subscriptionId: str
                 "category": [
                     "Compute"
                 ],
-                "severity": "Medium",
+                "severity": severity,
                 "userImpact": "Low",
                 "implementationEffort": "Low",
                 "assessmentType": "CustomerManaged"
