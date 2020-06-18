@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core = require("@actions/core");
 const client_1 = require("./client");
 const querystring = require("querystring");
+const uuid_1 = require("uuid");
 function getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, authorityUrl) {
     if (!servicePrincipalId || !servicePrincipalKey || !tenantId || !authorityUrl) {
         throw new Error("Not all values are present in the creds object. Ensure appId, password and tenant are supplied");
@@ -48,12 +49,13 @@ function getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, 
         });
     });
 }
-function createAssessmentMetadata(azureSessionToken, subscriptionId, managementEndpointUrl) {
+function createAssessmentMetadata(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid) {
     return new Promise((resolve, reject) => {
         console.log("Creating Metadata");
+        let description = core.getInput('description', { required: true });
         var webRequest = new client_1.WebRequest();
         webRequest.method = 'PUT';
-        webRequest.uri = `${managementEndpointUrl}/subscriptions/${subscriptionId}/providers/Microsoft.Security/assessmentMetadata/5a9c8d2c-1a7e-469e-9b93-04ad795f04f0?api-version=2020-01-01`;
+        webRequest.uri = `${managementEndpointUrl}/subscriptions/${subscriptionId}/providers/Microsoft.Security/assessmentMetadata/${metadata_guid}?api-version=2020-01-01`;
         webRequest.headers = {
             'Authorization': 'Bearer ' + azureSessionToken,
             'Content-Type': 'application/json; charset=utf-8'
@@ -61,6 +63,7 @@ function createAssessmentMetadata(azureSessionToken, subscriptionId, managementE
         webRequest.body = JSON.stringify({
             "properties": {
                 "displayName": "Assessments from GitHub action",
+                "description": description,
                 "remediationDescription": "Check with the pipeline create for remediation steps",
                 "category": [
                     "Compute"
@@ -84,7 +87,7 @@ function createAssessmentMetadata(azureSessionToken, subscriptionId, managementE
         }).catch(reject);
     });
 }
-function createAssessment(azureSessionToken, subscriptionId, managementEndpointUrl) {
+function createAssessment(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid) {
     let resourceGroupName = core.getInput('resource-group', { required: true });
     let clusterName = core.getInput('cluster-name', { required: true });
     let description = core.getInput('description', { required: true });
@@ -92,7 +95,7 @@ function createAssessment(azureSessionToken, subscriptionId, managementEndpointU
     return new Promise((resolve, reject) => {
         var webRequest = new client_1.WebRequest();
         webRequest.method = 'PUT';
-        webRequest.uri = `${managementEndpointUrl}/subscriptions/${subscriptionId}/resourceGroups/${resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/${clusterName}/providers/Microsoft.Security/assessments/5a9c8d2c-1a7e-469e-9b93-04ad795f04f0?api-version=2020-01-01`;
+        webRequest.uri = `${managementEndpointUrl}/subscriptions/${subscriptionId}/resourceGroups/${resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/${clusterName}/providers/Microsoft.Security/assessments/${metadata_guid}?api-version=2020-01-01`;
         webRequest.headers = {
             'Authorization': 'Bearer ' + azureSessionToken,
             'Content-Type': 'application/json; charset=utf-8'
@@ -139,8 +142,9 @@ function createASCAssessment() {
         let managementEndpointUrl = credsObject["resourceManagerEndpointUrl"] || "https://management.azure.com/";
         let subscriptionId = credsObject["subscriptionId"];
         let azureSessionToken = yield getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, authorityUrl);
-        yield createAssessmentMetadata(azureSessionToken, subscriptionId, managementEndpointUrl);
-        yield createAssessment(azureSessionToken, subscriptionId, managementEndpointUrl);
+        let metadata_guid = uuid_1.v4();
+        yield createAssessmentMetadata(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid);
+        yield createAssessment(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid);
     });
 }
 function run() {

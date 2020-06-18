@@ -2,6 +2,8 @@ import * as core from '@actions/core';
 import { WebRequest, WebRequestOptions, WebResponse, sendRequest } from "./client";
 import * as querystring from 'querystring';
 
+import { v4 as uuidv4 } from 'uuid';
+
 function getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, authorityUrl): Promise<string> {
 
     if (!servicePrincipalId || !servicePrincipalKey || !tenantId || !authorityUrl) {
@@ -45,12 +47,13 @@ function getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, 
     });
 }
 
-function createAssessmentMetadata(azureSessionToken: string, subscriptionId: string, managementEndpointUrl: string): Promise<string> {
+function createAssessmentMetadata(azureSessionToken: string, subscriptionId: string, managementEndpointUrl: string, metadata_guid: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
         console.log("Creating Metadata")
+        let description = core.getInput('description', { required: true });
         var webRequest = new WebRequest();
         webRequest.method = 'PUT';
-        webRequest.uri = `${managementEndpointUrl}/subscriptions/${subscriptionId}/providers/Microsoft.Security/assessmentMetadata/5a9c8d2c-1a7e-469e-9b93-04ad795f04f0?api-version=2020-01-01`;
+        webRequest.uri = `${managementEndpointUrl}/subscriptions/${subscriptionId}/providers/Microsoft.Security/assessmentMetadata/${metadata_guid}?api-version=2020-01-01`;
         webRequest.headers = {
             'Authorization': 'Bearer ' + azureSessionToken,
             'Content-Type': 'application/json; charset=utf-8'
@@ -59,6 +62,7 @@ function createAssessmentMetadata(azureSessionToken: string, subscriptionId: str
         webRequest.body = JSON.stringify({
             "properties": {
                 "displayName": "Assessments from GitHub action",
+                "description": description,
                 "remediationDescription": "Check with the pipeline create for remediation steps",
                 "category": [
                     "Compute"
@@ -83,17 +87,17 @@ function createAssessmentMetadata(azureSessionToken: string, subscriptionId: str
     });
 }
 
-function createAssessment(azureSessionToken: string, subscriptionId: string, managementEndpointUrl: string): Promise<string> {
+function createAssessment(azureSessionToken: string, subscriptionId: string, managementEndpointUrl: string, metadata_guid: string): Promise<string> {
     let resourceGroupName = core.getInput('resource-group', { required: true });
     let clusterName = core.getInput('cluster-name', { required: true });
     let description = core.getInput('description', { required: true });
     let code = core.getInput('code', { required: true });
 
     return new Promise<string>((resolve, reject) => {
-        
+
         var webRequest = new WebRequest();
         webRequest.method = 'PUT';
-        webRequest.uri = `${managementEndpointUrl}/subscriptions/${subscriptionId}/resourceGroups/${resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/${clusterName}/providers/Microsoft.Security/assessments/5a9c8d2c-1a7e-469e-9b93-04ad795f04f0?api-version=2020-01-01`;
+        webRequest.uri = `${managementEndpointUrl}/subscriptions/${subscriptionId}/resourceGroups/${resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/${clusterName}/providers/Microsoft.Security/assessments/${metadata_guid}?api-version=2020-01-01`;
         webRequest.headers = {
             'Authorization': 'Bearer ' + azureSessionToken,
             'Content-Type': 'application/json; charset=utf-8'
@@ -142,8 +146,10 @@ async function createASCAssessment(): Promise<void> {
     let subscriptionId = credsObject["subscriptionId"];
     let azureSessionToken = await getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, authorityUrl);
 
-    await createAssessmentMetadata(azureSessionToken, subscriptionId, managementEndpointUrl);
-    await createAssessment(azureSessionToken, subscriptionId, managementEndpointUrl);
+    let metadata_guid = uuidv4();
+
+    await createAssessmentMetadata(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid);
+    await createAssessment(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid);
 }
 
 async function run() {
