@@ -59,7 +59,6 @@ function createAssessmentMetadata(azureSessionToken: string, subscriptionId: str
         webRequest.body = JSON.stringify({
             "properties": {
                 "displayName": "Assessments from GitHub action",
-                "description": "Assessments from GitHub action",
                 "remediationDescription": "Check with the pipeline create for remediation steps",
                 "category": [
                     "Compute"
