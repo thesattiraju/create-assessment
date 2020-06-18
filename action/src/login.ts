@@ -51,7 +51,7 @@ function getRemediationSteps() {
     const run_id = process.env['GITHUB_RUN_ID'];
     const workflow = process.env['GITHUB_WORKFLOW'];
     const repo = process.env['GITHUB_REPOSITORY'];
-    const run_url = `https://github.com/${repo}/runs/${run_id}?check_suite_focus=true`;
+    const run_url = `https://github.com/${repo}/actions/runs/${run_id}?check_suite_focus=true`;
     const workflow_url = `https://github.com/${repo}/actions?query=workflow%3A${workflow}`;
     return `
         This security assessment has been created from GitHub actions workflow.
