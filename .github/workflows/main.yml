@@ -19,5 +19,5 @@ jobs:
         resource-group: ds-ms
         cluster-name: ds-ms-k8s
         code: Unhealthy
-        severity: Low
+        severity: High
         description: "This is a sample description from actions workflow"

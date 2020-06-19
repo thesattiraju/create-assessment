@@ -84,7 +84,7 @@ function createAssessmentMetadata(azureSessionToken, subscriptionId, managementE
         webRequest.body = JSON.stringify({
             "properties": {
                 "displayName": getAssessmentName(),
-                "description": description,
+                "description": "description",
                 "remediationDescription": getRemediationSteps(),
                 "category": [
                     "Compute"
