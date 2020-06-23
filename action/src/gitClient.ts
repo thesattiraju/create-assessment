@@ -14,7 +14,7 @@ export class GitHubClient {
         webRequest.method = "POST";
         webRequest.uri = checkRunUrl;
         webRequest.headers = {
-            Authorization: `Bearer ${this._token}`,
+            Authorization: `token ${this._token}`,
             Accept: 'application/vnd.github.antiope-preview+json'
         };
 
