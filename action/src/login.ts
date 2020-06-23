@@ -63,6 +63,7 @@ async function getContainerScanDetails() {
     if (!runs || runs.length == 1) return "";
 
     let details = "";
+    console.log(runs)
     runs.forEach((run: any) => {
         if (run && run.name && run.name.startsWith('[container-scan]')) {
             details = `${details} \n ${run.output.text}`;
@@ -132,7 +133,6 @@ function getAssessmentName(details: Details) {
 function createAssessmentMetadata(azureSessionToken: string, subscriptionId: string, managementEndpointUrl: string, metadata_guid: string, details: Details): Promise<string> {
     return new Promise<string>((resolve, reject) => {
         console.log("Creating Metadata")
-        let description = core.getInput('description', { required: true });
         let severity = core.getInput('severity', { required: true });
         var webRequest = new WebRequest();
         webRequest.method = 'PUT';
