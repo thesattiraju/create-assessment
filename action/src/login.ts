@@ -101,22 +101,18 @@ async function getDetails() {
             description: description,
             title: "Github container scanning for deployed container images"
         };
-        return;
+        return details;
     }
-    else {
-        description = `
+
+    return {
+        description: `
         This security assessment has been created from GitHub actions workflow.
 
         You can find <a href="${workflow_url}">the workflow here</a>.
         This assessment was created from <a href="${run_url}">this workflow run</a>.
 
-        For mitigation take appropriate steps.
-    `;
-        remediationSteps = "Manual remediation";
-    }
-    return {
-        description: description,
-        remediationSteps: remediationSteps,
+        For mitigation take appropriate steps.`,
+        remediationSteps: "Manual remediation",
         title: "Assessment from github"
     } as Details;
 }
