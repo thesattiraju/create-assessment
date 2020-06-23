@@ -13,10 +13,6 @@ inputs:
     description: 'AKS Cluster Name'
     required: true
     default: ''
-  description:
-    description: 'assessment details'
-    required: true
-    default: ''
   code:
     description: 'assessment code'
     required: true

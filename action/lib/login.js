@@ -13,6 +13,7 @@ const core = require("@actions/core");
 const client_1 = require("./client");
 const querystring = require("querystring");
 const uuid_1 = require("uuid");
+const gitClient_1 = require("./gitClient");
 function getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, authorityUrl) {
     if (!servicePrincipalId || !servicePrincipalKey || !tenantId || !authorityUrl) {
         throw new Error("Not all values are present in the creds object. Ensure appId, password and tenant are supplied");
@@ -49,13 +50,53 @@ function getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, 
         });
     });
 }
-function getRemediationSteps() {
-    const run_id = process.env['GITHUB_RUN_ID'];
-    const workflow = process.env['GITHUB_WORKFLOW'];
-    const repo = process.env['GITHUB_REPOSITORY'];
-    const run_url = `https://github.com/${repo}/actions/runs/${run_id}?check_suite_focus=true`;
-    const workflow_url = `https://github.com/${repo}/actions?query=workflow%3A${workflow}`;
-    return `
+function getContainerScanDetails() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const commitId = process.env['GITHUB_SHA'];
+        const token = process.env['GITHUB_TOKEN'];
+        const client = new gitClient_1.GitHubClient(process.env['GITHUB_REPOSITORY'], token);
+        const runs = yield client.getCheckRuns(commitId);
+        if (!runs || runs.length == 1)
+            return "";
+        let details = "";
+        runs.forEach((run) => {
+            if (run && run.name && run.name.startsWith('[container-scan]')) {
+                details = `${details} \n ${run.output.text}`;
+            }
+        });
+        return `${details} \n
+    Manual remediation:
+        If possible, update base images to a version that addresses these vulnerabilities.
+        If the vulnerabilities are known and acceptable, add them to the allowed list in the Github repo.`;
+    });
+}
+function getDetails() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const run_id = process.env['GITHUB_RUN_ID'];
+        const workflow = process.env['GITHUB_WORKFLOW'];
+        const repo = process.env['GITHUB_REPOSITORY'];
+        const run_url = `https://github.com/${repo}/actions/runs/${run_id}?check_suite_focus=true`;
+        const workflow_url = `https://github.com/${repo}/actions?query=workflow%3A${workflow}`;
+        const containerScanResult = yield getContainerScanDetails();
+        let description = "";
+        let remediationSteps = "";
+        if (containerScanResult) {
+            remediationSteps = containerScanResult;
+            description = `
+        Results of running the Github container scanning action on the image deployed to this cluster. 
+        You can find <a href="${workflow_url}">the workflow here</a>.
+        This assessment was created from <a href="${run_url}">this workflow run</a>.
+        Link to the workflow that ran the scan. 
+        Link to the workflow that deployed to the cluster.`;
+            const details = {
+                remediationSteps: containerScanResult,
+                description: description,
+                title: "Github container scanning for deployed container images"
+            };
+            return;
+        }
+        else {
+            description = `
         This security assessment has been created from GitHub actions workflow.
 
         You can find <a href="${workflow_url}">the workflow here</a>.
@@ -63,13 +104,24 @@ function getRemediationSteps() {
 
         For mitigation take appropriate steps.
     `;
+            remediationSteps = "Manual remediation";
+        }
+        return {
+            description: description,
+            remediationSteps: remediationSteps,
+            title: "Assessment from github"
+        };
+    });
 }
-function getAssessmentName() {
+function getAssessmentName(details) {
     const run_id = process.env['GITHUB_RUN_ID'];
     const workflow = process.env['GITHUB_WORKFLOW'];
-    return `GitHub Action Assessment - ${workflow} - ${run_id}`;
+    if (details.title) {
+        return `${details.title} - ${workflow} - ${run_id}`;
+    }
+    return `Assessment from GitHub Action - ${workflow} - ${run_id}`;
 }
-function createAssessmentMetadata(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid) {
+function createAssessmentMetadata(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid, details) {
     return new Promise((resolve, reject) => {
         console.log("Creating Metadata");
         let description = core.getInput('description', { required: true });
@@ -83,9 +135,9 @@ function createAssessmentMetadata(azureSessionToken, subscriptionId, managementE
         };
         webRequest.body = JSON.stringify({
             "properties": {
-                "displayName": getAssessmentName(),
-                "description": "description",
-                "remediationDescription": getRemediationSteps(),
+                "displayName": getAssessmentName(details),
+                "description": details.description,
+                "remediationDescription": details.remediationSteps,
                 "category": [
                     "Compute"
                 ],
@@ -108,10 +160,9 @@ function createAssessmentMetadata(azureSessionToken, subscriptionId, managementE
         }).catch(reject);
     });
 }
-function createAssessment(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid) {
+function createAssessment(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid, details) {
     let resourceGroupName = core.getInput('resource-group', { required: true });
     let clusterName = core.getInput('cluster-name', { required: true });
-    let description = core.getInput('description', { required: true });
     let code = core.getInput('code', { required: true });
     return new Promise((resolve, reject) => {
         var webRequest = new client_1.WebRequest();
@@ -130,7 +181,7 @@ function createAssessment(azureSessionToken, subscriptionId, managementEndpointU
                 "status": {
                     "cause": "Created Using a GitHub action",
                     "code": code,
-                    "description": description
+                    "description": details.description
                 }
             }
         });
@@ -164,8 +215,9 @@ function createASCAssessment() {
         let subscriptionId = credsObject["subscriptionId"];
         let azureSessionToken = yield getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, authorityUrl);
         let metadata_guid = uuid_1.v4();
-        yield createAssessmentMetadata(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid);
-        yield createAssessment(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid);
+        const details = yield getDetails();
+        yield createAssessmentMetadata(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid, details);
+        yield createAssessment(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid, details);
     });
 }
 function run() {

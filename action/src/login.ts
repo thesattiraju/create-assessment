@@ -3,6 +3,13 @@ import { WebRequest, WebRequestOptions, WebResponse, sendRequest } from "./clien
 import * as querystring from 'querystring';
 
 import { v4 as uuidv4 } from 'uuid';
+import { GitHubClient } from './gitClient';
+
+interface Details {
+    description: string;
+    remediationSteps: string;
+    title: string;
+}
 
 function getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, authorityUrl): Promise<string> {
 
@@ -47,13 +54,55 @@ function getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, 
     });
 }
 
-function getRemediationSteps() {
+async function getContainerScanDetails() {
+    const commitId = process.env['GITHUB_SHA'];
+    const token = process.env['GITHUB_TOKEN'];
+    const client = new GitHubClient(process.env['GITHUB_REPOSITORY'], token);
+    const runs = await client.getCheckRuns(commitId);
+
+    if (!runs || runs.length == 1) return "";
+
+    let details = "";
+    runs.forEach((run: any) => {
+        if (run && run.name && run.name.startsWith('[container-scan]')) {
+            details = `${details} \n ${run.output.text}`;
+        }
+    });
+
+    return `${details} \n
+    Manual remediation:
+        If possible, update base images to a version that addresses these vulnerabilities.
+        If the vulnerabilities are known and acceptable, add them to the allowed list in the Github repo.`;
+}
+
+async function getDetails() {
     const run_id = process.env['GITHUB_RUN_ID'];
     const workflow = process.env['GITHUB_WORKFLOW'];
     const repo = process.env['GITHUB_REPOSITORY'];
     const run_url = `https://github.com/${repo}/actions/runs/${run_id}?check_suite_focus=true`;
     const workflow_url = `https://github.com/${repo}/actions?query=workflow%3A${workflow}`;
-    return `
+
+    const containerScanResult = await getContainerScanDetails();
+
+    let description = "";
+    let remediationSteps = "";
+    if (containerScanResult) {
+        remediationSteps = containerScanResult;
+        description = `
+        Results of running the Github container scanning action on the image deployed to this cluster. 
+        You can find <a href="${workflow_url}">the workflow here</a>.
+        This assessment was created from <a href="${run_url}">this workflow run</a>.
+        Link to the workflow that ran the scan. 
+        Link to the workflow that deployed to the cluster.`
+        const details: Details = {
+            remediationSteps: containerScanResult,
+            description: description,
+            title: "Github container scanning for deployed container images"
+        };
+        return;
+    }
+    else {
+        description = `
         This security assessment has been created from GitHub actions workflow.
 
         You can find <a href="${workflow_url}">the workflow here</a>.
@@ -61,15 +110,26 @@ function getRemediationSteps() {
 
         For mitigation take appropriate steps.
     `;
+        remediationSteps = "Manual remediation";
+    }
+    return {
+        description: description,
+        remediationSteps: remediationSteps,
+        title: "Assessment from github"
+    } as Details;
 }
 
-function getAssessmentName(){
+
+function getAssessmentName(details: Details) {
     const run_id = process.env['GITHUB_RUN_ID'];
     const workflow = process.env['GITHUB_WORKFLOW'];
-    return `GitHub Action Assessment - ${workflow} - ${run_id}`;
+    if (details.title) {
+        return `${details.title} - ${workflow} - ${run_id}`
+    }
+    return `Assessment from GitHub Action - ${workflow} - ${run_id}`;
 }
 
-function createAssessmentMetadata(azureSessionToken: string, subscriptionId: string, managementEndpointUrl: string, metadata_guid: string): Promise<string> {
+function createAssessmentMetadata(azureSessionToken: string, subscriptionId: string, managementEndpointUrl: string, metadata_guid: string, details: Details): Promise<string> {
     return new Promise<string>((resolve, reject) => {
         console.log("Creating Metadata")
         let description = core.getInput('description', { required: true });
@@ -84,9 +144,9 @@ function createAssessmentMetadata(azureSessionToken: string, subscriptionId: str
 
         webRequest.body = JSON.stringify({
             "properties": {
-                "displayName": getAssessmentName(),
-                "description": "description",
-                "remediationDescription": getRemediationSteps(),
+                "displayName": getAssessmentName(details),
+                "description": details.description,
+                "remediationDescription": details.remediationSteps,
                 "category": [
                     "Compute"
                 ],
@@ -110,10 +170,9 @@ function createAssessmentMetadata(azureSessionToken: string, subscriptionId: str
     });
 }
 
-function createAssessment(azureSessionToken: string, subscriptionId: string, managementEndpointUrl: string, metadata_guid: string): Promise<string> {
+function createAssessment(azureSessionToken: string, subscriptionId: string, managementEndpointUrl: string, metadata_guid: string, details: Details): Promise<string> {
     let resourceGroupName = core.getInput('resource-group', { required: true });
     let clusterName = core.getInput('cluster-name', { required: true });
-    let description = core.getInput('description', { required: true });
     let code = core.getInput('code', { required: true });
 
     return new Promise<string>((resolve, reject) => {
@@ -135,7 +194,7 @@ function createAssessment(azureSessionToken: string, subscriptionId: string, man
                 "status": {
                     "cause": "Created Using a GitHub action",
                     "code": code,
-                    "description": description
+                    "description": details.description
                 }
             }
         });
@@ -171,8 +230,10 @@ async function createASCAssessment(): Promise<void> {
 
     let metadata_guid = uuidv4();
 
-    await createAssessmentMetadata(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid);
-    await createAssessment(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid);
+    const details: Details = await getDetails();
+
+    await createAssessmentMetadata(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid, details);
+    await createAssessment(azureSessionToken, subscriptionId, managementEndpointUrl, metadata_guid, details);
 }
 
 async function run() {

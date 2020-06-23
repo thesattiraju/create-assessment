@@ -23,6 +23,16 @@ exports.WebResponse = WebResponse;
 class WebRequestOptions {
 }
 exports.WebRequestOptions = WebRequestOptions;
+var StatusCodes;
+(function (StatusCodes) {
+    StatusCodes[StatusCodes["OK"] = 200] = "OK";
+    StatusCodes[StatusCodes["CREATED"] = 201] = "CREATED";
+    StatusCodes[StatusCodes["UNAUTHORIZED"] = 401] = "UNAUTHORIZED";
+    StatusCodes[StatusCodes["NOT_FOUND"] = 404] = "NOT_FOUND";
+    StatusCodes[StatusCodes["UNPROCESSABLE_ENTITY"] = 422] = "UNPROCESSABLE_ENTITY";
+    StatusCodes[StatusCodes["INTERNAL_SERVER_ERROR"] = 500] = "INTERNAL_SERVER_ERROR";
+    StatusCodes[StatusCodes["SERVICE_UNAVAILABLE"] = 503] = "SERVICE_UNAVAILABLE";
+})(StatusCodes = exports.StatusCodes || (exports.StatusCodes = {}));
 function sendRequest(request, options) {
     return __awaiter(this, void 0, void 0, function* () {
         let i = 0;
