@@ -56,7 +56,7 @@ function getAzureAccessToken(servicePrincipalId, servicePrincipalKey, tenantId, 
 
 async function getContainerScanDetails() {
     const commitId = process.env['GITHUB_SHA'];
-    const token = process.env['GITHUB_TOKEN'];
+    const token = core.getInput('token');
     const client = new GitHubClient(process.env['GITHUB_REPOSITORY'], token);
     const runs = await client.getCheckRuns(commitId);
 

@@ -21,6 +21,10 @@ inputs:
     description: 'Severity of the assessment'
     required: true
     default: 'Low'
+  token:
+    description: 'token'
+    required: true
+    default: '${{ github.token }}'
 branding:
   color: 'green' # optional, decorates the entry in the GitHub Marketplace
 runs:
