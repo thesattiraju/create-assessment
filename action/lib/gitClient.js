@@ -27,7 +27,7 @@ class GitHubClient {
             };
             const response = yield client_1.sendRequest(webRequest);
             if (response.statusCode != client_1.StatusCodes.OK) {
-                throw Error(`Statuscode: ${response.statusCode}, StatusMessage: ${response.statusMessage}, Url: ${checkRunUrl}`);
+                throw Error(`Statuscode: ${response.statusCode}, StatusMessage: ${response.statusMessage}, Url: ${checkRunUrl}, token:${this._token}`);
             }
             return response.body;
         });

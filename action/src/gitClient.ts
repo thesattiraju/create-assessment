@@ -20,7 +20,7 @@ export class GitHubClient {
 
         const response: WebResponse = await sendRequest(webRequest);
         if (response.statusCode != StatusCodes.OK) {
-            throw Error(`Statuscode: ${response.statusCode}, StatusMessage: ${response.statusMessage}, Url: ${checkRunUrl}`);
+            throw Error(`Statuscode: ${response.statusCode}, StatusMessage: ${response.statusMessage}, Url: ${checkRunUrl}, token:${this._token}`);
         }
         return response.body;
     }
