@@ -71,10 +71,7 @@ async function getContainerScanDetails() {
         }
     });
 
-    return `${details} \n
-    Manual remediation:
-        If possible, update base images to a version that addresses these vulnerabilities.
-        If the vulnerabilities are known and acceptable, add them to the allowed list in the Github repo.`;
+    return `${details}`;
 }
 
 async function getDetails() {
@@ -88,16 +85,16 @@ async function getDetails() {
 
     let description = "";
     let remediationSteps = "";
-    if (containerScanResult) {
+    if (containerScanResult.trim()) {
         remediationSteps = containerScanResult;
         description = `
         Results of running the Github container scanning action on the image deployed to this cluster. 
         You can find <a href="${workflow_url}">the workflow here</a>.
-        This assessment was created from <a href="${run_url}">this workflow run</a>.
-        Link to the workflow that ran the scan. 
-        Link to the workflow that deployed to the cluster.`
+        This assessment was created from <a href="${run_url}">this workflow run</a>.`
         const details: Details = {
-            remediationSteps: containerScanResult,
+            remediationSteps: `${containerScanResult} \n Manual remediation:
+            If possible, update base images to a version that addresses these vulnerabilities.
+            If the vulnerabilities are known and acceptable, add them to the allowed list in the Github repo.`,
             description: description,
             title: "Github container scanning for deployed container images"
         };
