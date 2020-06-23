@@ -11,7 +11,7 @@ export class GitHubClient {
     public async getCheckRuns(commitId: string): Promise<any[]> {
         const checkRunUrl = `https://api.github.com/repos/${this._repository}/commits/${commitId}/check-runs`;
         const webRequest = new WebRequest();
-        webRequest.method = "POST";
+        webRequest.method = "GET";
         webRequest.uri = checkRunUrl;
         webRequest.headers = {
             Authorization: `token ${this._token}`,

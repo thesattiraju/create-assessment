@@ -19,7 +19,7 @@ class GitHubClient {
         return __awaiter(this, void 0, void 0, function* () {
             const checkRunUrl = `https://api.github.com/repos/${this._repository}/commits/${commitId}/check-runs`;
             const webRequest = new client_1.WebRequest();
-            webRequest.method = "POST";
+            webRequest.method = "GET";
             webRequest.uri = checkRunUrl;
             webRequest.headers = {
                 Authorization: `token ${this._token}`,
