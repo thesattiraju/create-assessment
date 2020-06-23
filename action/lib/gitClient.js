@@ -17,7 +17,7 @@ class GitHubClient {
     }
     getCheckRuns(commitId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const checkRunUrl = `https://api.github.com/repos/${this._repository}/check-runs`;
+            const checkRunUrl = `https://api.github.com/repos/${this._repository}/commits/${commitId}/check-runs`;
             const webRequest = new client_1.WebRequest();
             webRequest.method = "POST";
             webRequest.uri = checkRunUrl;
