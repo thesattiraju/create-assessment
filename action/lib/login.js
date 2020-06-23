@@ -60,7 +60,8 @@ function getContainerScanDetails() {
             return "";
         let details = "";
         console.log(runs);
-        runs.forEach((run) => {
+        let checkRuns = runs['check_runs'];
+        checkRuns.forEach((run) => {
             if (run && run.name && run.name.startsWith('[container-scan]')) {
                 details = `${details} \n ${run.output.text}`;
             }
