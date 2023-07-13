@@ -15,7 +15,7 @@
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.0.0",
-    "typed-rest-client": "^1.5.0",
+    "typed-rest-client": "^1.8.11",
     "uuid": "8.1.0"
   },
   "devDependencies": {
